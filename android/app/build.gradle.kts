@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.aesthetic"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

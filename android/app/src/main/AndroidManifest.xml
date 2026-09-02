@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    // DECLARAMOS QUE PERMISO QUEREMOS SOLICITAR
+    <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="aesthetic"
         android:name="${applicationName}"
