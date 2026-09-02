@@ -1,6 +1,9 @@
 import 'package:aesthetic/services/image_picker_service.dart';
+import 'package:aesthetic/services/permission_handler_service.dart';
+import 'package:aesthetic/widgets/permission_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen
     extends
@@ -23,27 +26,103 @@ class _HomeScreenState
         > {
   // SERVICIOS
   final imagePickerService = ImagePickerService();
+  final permissionService = PermissionHandlerService();
 
   // ESTADOS
   XFile? imageStatus;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Pedimos el acceso a la camara al construir la interfaz de la app por primera vez.
+    _checkCameraPermission();
+  }
+
+  // Metodo que intermediario que solicita al servicio el permiso de la camara del dispositivo
+  Future<
+    void
+  >
+  _checkCameraPermission() async {
+    final status = await permissionService.requestCameraPermission();
+    debugPrint(
+      'Estado de permisos actual: $status',
+    );
+
+    if (status.isPermanentlyDenied) {
+      await _showPermissionDialog();
+    }
+  }
+
+  // Metodo auxiliar que crea el alertDialog para abrir las configuraciones de la app.
+  Future<
+    void
+  >
+  _showPermissionDialog() async {
+    await showDialog(
+      context: context,
+      builder:
+          (
+            context,
+          ) {
+            return PermissionDialog(
+              permissionService: permissionService,
+            );
+          },
+    );
+  }
 
   // Metodo intermediario que obtiene la imagen desde la camara del dispositivo.
   Future<
     void
   >
   _getImageFromCamera() async {
-    final picture = await imagePickerService.loadImageFromCamera();
-
-    if (picture ==
-        null) {
-      return;
-    }
-
-    setState(
-      () {
-        imageStatus = picture;
-      },
+    final status = await permissionService.checkCameraPermission();
+    debugPrint(
+      'Estado actual: $status',
     );
+
+    // Verficamos si la interfaz HomeScreen sique montado.
+    if (!mounted) return;
+
+    // ESTADO CONCEDIDO
+    if (status.isGranted) {
+      final picture = await imagePickerService.loadImageFromCamera();
+
+      if (picture ==
+          null) {
+        return;
+      }
+
+      setState(
+        () {
+          imageStatus = picture;
+        },
+      );
+
+      // ESTADO DENEGADO
+    } else if (status.isDenied) {
+      final newStatus = await permissionService.requestCameraPermission();
+
+      if (newStatus.isGranted) {
+        final picture = await imagePickerService.loadImageFromCamera();
+
+        if (picture ==
+            null) {
+          return;
+        }
+
+        setState(
+          () {
+            imageStatus = picture;
+          },
+        );
+      }
+
+      // ESTADO PERMANENTEMENTE DENEGADO.
+    } else if (status.isPermanentlyDenied) {
+      _showPermissionDialog();
+    }
   }
 
   // Metodo intermediario que obtiene la imagen desde la galeria del dispositivo.
@@ -91,7 +170,7 @@ class _HomeScreenState
               ),
             ),
             Text(
-              'Presiona el boton para editar tus fotos',
+              'Agrega tus fotos con el boton de abajo',
               style: TextStyle(
                 fontSize: 18,
               ),
