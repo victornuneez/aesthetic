@@ -1,3 +1,4 @@
+import 'package:aesthetic/screens/filters_screen.dart';
 import 'package:aesthetic/services/image_picker_service.dart';
 import 'package:aesthetic/services/permission_handler_service.dart';
 import 'package:aesthetic/widgets/permission_dialog.dart';
@@ -28,22 +29,19 @@ class _HomeScreenState
   final imagePickerService = ImagePickerService();
   final permissionService = PermissionHandlerService();
 
-  // ESTADOS
-  XFile? imageStatus;
-
   @override
   void initState() {
     super.initState();
 
     // Pedimos el acceso a la camara al construir la interfaz de la app por primera vez.
-    _checkCameraPermission();
+    _initRequestCameraPermission();
   }
 
   // Metodo que intermediario que solicita al servicio el permiso de la camara del dispositivo
   Future<
     void
   >
-  _checkCameraPermission() async {
+  _initRequestCameraPermission() async {
     final status = await permissionService.requestCameraPermission();
     debugPrint(
       'Estado de permisos actual: $status',
@@ -72,6 +70,25 @@ class _HomeScreenState
     );
   }
 
+  // Metodo auxiliar que crea y navega a la pantalla de filtros.
+  void _navigateFiltersScreen(
+    XFile picture,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (
+              context,
+            ) {
+              return FiltersScreen(
+                image: picture,
+              );
+            },
+      ),
+    );
+  }
+
   // Metodo intermediario que obtiene la imagen desde la camara del dispositivo.
   Future<
     void
@@ -82,9 +99,6 @@ class _HomeScreenState
       'Estado actual: $status',
     );
 
-    // Verficamos si la interfaz HomeScreen sique montado.
-    if (!mounted) return;
-
     // ESTADO CONCEDIDO
     if (status.isGranted) {
       final picture = await imagePickerService.loadImageFromCamera();
@@ -94,10 +108,8 @@ class _HomeScreenState
         return;
       }
 
-      setState(
-        () {
-          imageStatus = picture;
-        },
+      _navigateFiltersScreen(
+        picture,
       );
 
       // ESTADO DENEGADO
@@ -112,10 +124,8 @@ class _HomeScreenState
           return;
         }
 
-        setState(
-          () {
-            imageStatus = picture;
-          },
+        _navigateFiltersScreen(
+          picture,
         );
       }
 
@@ -137,10 +147,8 @@ class _HomeScreenState
       return;
     }
 
-    setState(
-      () {
-        imageStatus = picture;
-      },
+    _navigateFiltersScreen(
+      picture,
     );
   }
 
